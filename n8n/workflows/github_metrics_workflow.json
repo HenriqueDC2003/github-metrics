@@ -1,0 +1,174 @@
+{
+  "name": "My workflow",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {}
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        0,
+        0
+      ],
+      "id": "c65b9ba4-410f-4e28-b892-8699434a9502",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "jsCode": "const username = 'HenriqueDC2003';\n\nreturn {\n  json: {\n    headers: {\n      'Accept': 'application/vnd.github+json',\n      'X-GitHub-Api-Version': '2022-11-28'\n    },\n    endpoint: `https://api.github.com/users/${username}/repos?per_page=100&type=owner`\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        224,
+        0
+      ],
+      "id": "bae754f1-5960-4c7f-93a6-62448e980e64",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.endpoint }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization ",
+              "value": "={{ $json.headers.Authorization }}"
+            },
+            {
+              "name": "Accept ",
+              "value": "={{ $json.headers.Accept }}"
+            },
+            {
+              "name": "X-GitHub-Api-Version",
+              "value": "={{ $json.headers['X-GitHub-Api-Version'] }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        416,
+        0
+      ],
+      "id": "6e4326f8-07eb-4bcd-8833-9bad6de4114a",
+      "name": "HTTP Request",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "GCyDWcDHol4vK8qH",
+          "name": "GitHub API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const repos = $input.all().map(item => item.json);\nconst hoje = new Date().toISOString().split('T')[0];\nconst dadosLimpos = [];\n\nfor (const repo of repos) {\n  if (repo.fork) continue;\n\n  dadosLimpos.push({\n    json: {\n      repo_name: repo.name,\n      linguagem: repo.language || 'Não especificado',\n      estrelas: repo.stargazers_count || 0,\n      forks: repo.forks_count || 0,\n      issues_abertas: repo.open_issues_count || 0,\n      tamanho_kb: repo.size || 0,\n      ultimo_push: repo.pushed_at,\n      data_coleta: hoje\n    }\n  });\n}\n\nreturn dadosLimpos;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        624,
+        0
+      ],
+      "id": "0d59a774-51d5-4b94-acef-185620b8bed0",
+      "name": "Code in JavaScript1"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO github_repos (repo_name, linguagem, estrelas, forks, issues_abertas, tamanho_kb, ultimo_push, data_coleta)\nVALUES (\n  '{{ $json.repo_name }}',\n  '{{ $json.linguagem }}',\n  {{ $json.estrelas }},\n  {{ $json.forks }},\n  {{ $json.issues_abertas }},\n  {{ $json.tamanho_kb }},\n  '{{ $json.ultimo_push }}',\n  '{{ $json.data_coleta }}'\n)\nON CONFLICT (repo_name, data_coleta)\nDO UPDATE SET\n  estrelas = EXCLUDED.estrelas,\n  forks = EXCLUDED.forks,\n  issues_abertas = EXCLUDED.issues_abertas,\n  tamanho_kb = EXCLUDED.tamanho_kb,\n  ultimo_push = EXCLUDED.ultimo_push,\n  linguagem = EXCLUDED.linguagem;",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        832,
+        0
+      ],
+      "id": "5f5e0dfe-dd8b-4cf4-ad5b-95c340665514",
+      "name": "Execute a SQL query",
+      "credentials": {
+        "postgres": {
+          "id": "jdNnkydmdkMrC4JA",
+          "name": "Postgres account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript1": {
+      "main": [
+        [
+          {
+            "node": "Execute a SQL query",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Execute a SQL query": {
+      "main": [
+        []
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "f9197190-40d9-4698-b7f8-68699bd11209",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "958e8ec7da69f7530d58c7105c7d4d08fbd9489d94761809ad8b5939e4138e19"
+  },
+  "nodeGroups": [],
+  "id": "fplGN23kcKxO8o9h",
+  "tags": []
+}

@@ -1,0 +1,38 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  validate:
+    name: Validate docker-compose
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Cria .env a partir do exemplo
+        run: cp .env.example .env
+
+      - name: Valida sintaxe do docker-compose.yml
+        run: docker compose config --quiet
+
+      - name: Sobe os containers
+        run: docker compose up -d
+
+      - name: Aguarda healthchecks
+        run: |
+          echo "Aguardando PostgreSQL ficar saudável..."
+          timeout 60 bash -c 'until docker compose ps postgres | grep -q "healthy"; do sleep 2; done'
+          echo "✅ PostgreSQL saudável"
+
+      - name: Verifica status dos containers
+        run: docker compose ps
+
+      - name: Derruba os containers
+        if: always()
+        run: docker compose down -v

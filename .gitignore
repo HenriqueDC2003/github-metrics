@@ -1,0 +1,10 @@
+# Nunca sobe pro GitHub
+.env
+
+# Dados gerados em runtime
+grafana/data/
+n8n/data/
+
+# OS
+.DS_Store
+Thumbs.db
