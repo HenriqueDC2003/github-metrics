@@ -20,6 +20,12 @@ PostgreSQL
 Grafana (dashboards)
 ```
 
+## Dashboard
+
+![Linguagens por repositório](docs/screenshots/linguagens.png)
+![Repositórios por último push](docs/screenshots/ultimo_push.png)
+![Total de repositórios](docs/screenshots/total_repos.png)
+
 ## Stack
 
 | Ferramenta | Função |
@@ -36,7 +42,7 @@ Grafana (dashboards)
 
 ```bash
 # 1. Clone o repositório
-git clone https://github.com/seu-usuario/github-metrics.git
+git clone https://github.com/HenriqueDC2003/github-metrics.git
 cd github-metrics
 
 # 2. Crie o .env e edite as senhas
